@@ -32,10 +32,17 @@ if data is not None:
             count[palabra] = count[palabra] + 1
 
     ncount = sorted(
-        [[k, v, i] for i, (k, v) in enumerate(count.items())], key=lambda r:r[1], reverse=True)
+        [[k, v] for k, v in count.items()], key=lambda r:r[1], reverse=True)
+
+    for palabra in ncount[:50]:
+        for index, value in dataframe["Lemas"].items():
+            ##st.write(''.join(value) + " - " + palabra[0])
+
+            if palabra[0] in value:
+                dataframe.at[index, palabra[0]] = '1'
 
     st.write(ncount)
-    #st.write(dataframe)
+    st.write(dataframe)
     
     st.download_button(
        "Descargar salida",
