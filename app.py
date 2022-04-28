@@ -12,7 +12,7 @@ def lemas(text, nlp, lista_pos):
     lista = [token.lemma_ for token in text if token.pos_ in lista_pos]
     return lista #','.join(lista)
 
-st.title('Lematiza CSV')
+st.title('Contar palabras')
 st.text('Cargar archivo CSV separado con punto y coma.')
 st.text('Primera Columna: ID')
 st.text('Segunda Columna: Texto')
