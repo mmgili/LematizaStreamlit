@@ -7,9 +7,18 @@ import spacy
 def convert_df(df):
    return df.to_csv(sep=";", index=False, quoting=3).encode('utf-8') #3 = csv.QUOTE_NONE
 
+@st.cache
+def preprocess(texto):
+    return texto.lower().strip()
+
 def lemas(text, nlp, lista_pos):
-    text = nlp(text.lower())
+    text = nlp(preprocess(text))
     lista = [token.lemma_ for token in text if token.pos_ in lista_pos]
+    return lista #','.join(lista)
+
+def contar(text):
+    text = nlp(preprocess(text))
+    lista = [token.orth_ for token in text]
     return lista #','.join(lista)
 
 st.title('Contar palabras')
@@ -17,24 +26,29 @@ st.text('Cargar archivo CSV separado con punto y coma.')
 st.text('Primera Columna: ID')
 st.text('Segunda Columna: Texto')
 
-C_NOUN = st.checkbox('Sustantivos comunes', value=True)
-C_PROPN = st.checkbox('Sustantivos propios', value=True)
-C_ADJ = st.checkbox('Adjetivos', value=True)
-C_VERB = st.checkbox('Verbos', value=True)
-C_ADV = st.checkbox('Adverbios', value=True)
+t_proceso = st.radio(
+    "Tipo de proceso",
+    ('Contar palabras normal', 'Para nube de palabras'), index=0)
+     
 cant_palabras = st.number_input('Cantidad de palabras', min_value=1, value=50)
-
-lista_pos = []
-if C_NOUN:
-    lista_pos.append(u'NOUN')
-if C_PROPN:
-    lista_pos.append(u'PROPN')
-if C_ADJ:
-    lista_pos.append(u'ADJ')
-if C_ADV:
-    lista_pos.append(u'ADV')
-if C_VERB:
-    lista_pos.append(u'VERB')
+t_nube = (t_proceso == 'Contar palabras normal')
+if t_proceso == 'Para nube de palabras':
+    C_NOUN = st.checkbox('Sustantivos comunes', value=True)
+    C_PROPN = st.checkbox('Sustantivos propios', value=True)
+    C_ADJ = st.checkbox('Adjetivos', value=True)
+    C_VERB = st.checkbox('Verbos', value=True)
+    C_ADV = st.checkbox('Adverbios', value=True)
+    lista_pos = []
+    if C_NOUN:
+        lista_pos.append(u'NOUN')
+    if C_PROPN:
+        lista_pos.append(u'PROPN')
+    if C_ADJ:
+        lista_pos.append(u'ADJ')
+    if C_ADV:
+        lista_pos.append(u'ADV')
+    if C_VERB:
+        lista_pos.append(u'VERB')
 
 data = st.file_uploader("Cargar CSV", type=["csv"], accept_multiple_files=False, key=None, help=None, on_change=None, args=None, kwargs=None, disabled=False)
 
@@ -43,7 +57,11 @@ if data is not None:
     ##csvreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
     nlp = spacy.load('es_core_news_sm', disable=['ner'])
     dataframe = pd.read_csv(data, delimiter=";")
-    dataframe["Lemas"] = dataframe[dataframe.columns[1]].apply(lemas, args=(nlp, lista_pos,))
+    if t_proceso == 'Para nube de palabras':
+        dataframe["Lemas"] = dataframe[dataframe.columns[1]].apply(lemas, args=(nlp, lista_pos,))
+    else:
+        dataframe["Lemas"] = dataframe[dataframe.columns[1]].apply(contar)
+
     count = {}
     for index, value in dataframe["Lemas"].items():
         for palabra in value:
@@ -59,7 +77,7 @@ if data is not None:
                 dataframe.at[index, palabra[0]] = '1'
 
     pd_ncount = pd.DataFrame(ncount)
-    st.write(pd_ncount)
+    st.dataframe(pd_ncount)
     st.download_button(
        "Descargar conteo",
        convert_df(pd_ncount),
