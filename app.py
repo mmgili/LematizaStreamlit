@@ -55,28 +55,30 @@ cant_palabras = st.number_input('Cantidad de palabras', min_value=1, value=50)
 
 if data is not None:
     if st.button("Correr!"):
-        nlp = spacy.load('es_core_news_sm', disable=['ner'])
-        dataframe = pd.read_csv(data, encoding='utf-8', quotechar='"', quoting=0, delimiter=";", dtype=str)
-        if t_proceso == 'Para nube de palabras':
-            dataframe["Lemas"] = dataframe[dataframe.columns[1]].apply(lemas, args=(nlp, lista_pos,))
-        else:
-            dataframe["Lemas"] = dataframe[dataframe.columns[1]].apply(contar)
+        with st.spinner('Procesando...'):
+            nlp = spacy.load('es_core_news_sm', disable=['ner'])
+            dataframe = pd.read_csv(data, encoding='utf-8', quotechar='"', quoting=0, delimiter=";", dtype=str)
+            dataframe["Lista_Lemas"] = ''
+            if t_proceso == 'Para nube de palabras':
+                dataframe["Lemas"] = dataframe[dataframe.columns[1]].apply(lemas, args=(nlp, lista_pos,))
+            else:
+                dataframe["Lemas"] = dataframe[dataframe.columns[1]].apply(contar)
 
-        count = {}
-        for index, value in dataframe["Lemas"].items():
-            for palabra in value:
-                count.setdefault(palabra, 0)
-                count[palabra] = count[palabra] + 1
-
-        ncount = sorted(
-            [[k, v] for k, v in count.items()], key=lambda r:r[1], reverse=True)
-
-        for palabra in ncount[:cant_palabras]:
+            count = {}
             for index, value in dataframe["Lemas"].items():
-                if palabra[0] in value:
-                    dataframe.at[index, palabra[0]] = '1'
+                for palabra in value:
+                    count.setdefault(palabra, 0)
+                    count[palabra] = count[palabra] + 1
 
-        dataframe["Lemas"] = dataframe["Lemas"].apply(lambda x: ' '.join(x))
+            ncount = sorted(
+                [[k, v] for k, v in count.items()], key=lambda r:r[1], reverse=True)
+
+            for palabra in ncount[:cant_palabras]:
+                for index, value in dataframe["Lemas"].items():
+                    if palabra[0] in value:
+                        dataframe.at[index, palabra[0]] = '1'
+
+            dataframe["Lista_Lemas"] = dataframe["Lemas"].apply(lambda x: ' '.join(x))
 
         pd_ncount = pd.DataFrame(ncount)
         st.dataframe(pd_ncount)
