@@ -5,11 +5,11 @@ import spacy
 
 @st.cache
 def convert_df(df):
-   return df.to_csv(sep=";", index=False, quoting=3).encode('utf-8') #3 = csv.QUOTE_NONE
+   return df.to_csv(sep=";", index=False, quoting=1).encode('utf-8') #3 = csv.QUOTE_NONE
 
 @st.cache
 def preprocess(texto):
-    return texto.lower().strip()
+    return str(texto).lower().strip()
 
 def lemas(text, nlp, lista_pos):
     text = nlp(preprocess(text))
@@ -56,7 +56,7 @@ cant_palabras = st.number_input('Cantidad de palabras', min_value=1, value=50)
 if data is not None:
     if st.button("Correr!"):
         nlp = spacy.load('es_core_news_sm', disable=['ner'])
-        dataframe = pd.read_csv(data, delimiter=";")
+        dataframe = pd.read_csv(data, encoding='utf-8', quotechar='"', quoting=0, delimiter=";", dtype=str)
         if t_proceso == 'Para nube de palabras':
             dataframe["Lemas"] = dataframe[dataframe.columns[1]].apply(lemas, args=(nlp, lista_pos,))
         else:
